@@ -23,6 +23,19 @@ struct Triangle {
     radius_sqr: f64,
 }
 
+impl Triangle {
+    pub fn new(p1: &Point, p2: &Point, p3: &Point) -> Triangle {
+        self {
+            p1: p1,
+            p2: p2,
+            p3: p3,
+            center: {
+
+            }
+        }
+    }
+}
+
 struct Delaunay2D {
     vertices: Vec<Point>,
     triangles: Vec<Triangle>,
