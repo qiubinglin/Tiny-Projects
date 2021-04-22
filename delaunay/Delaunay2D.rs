@@ -5,8 +5,14 @@ struct Point {
 }
 
 impl Point {
-    fn cmp(&self, rhs: &Point) -> bool {
-        self.x < rhs.x
+    fn cmp(&self, rhs: &Point) -> std::cmp::Ordering {
+        if self.x < rhs.x {
+            std::cmp::Ordering::Less
+        } else if self.x == rhs.x {
+            std::cmp::Ordering::Equal
+        } else {
+            std::cmp::Ordering::Greater
+        }
     }
 }
 
@@ -24,28 +30,30 @@ struct Triangle {
 }
 
 fn get_circumsphere(p0: &Point, p1: &Point, p2: &Point, center: &mut Point, radius_sqr: &mut f64) {
-    x1 = p1.x - p0.x;
-    y1 = p1.y - p0.y;
-    x2 = p2.x - p0.x;
-    y2 = p2.y - p0.y;
+    let x1 = p1.x - p0.x;
+    let y1 = p1.y - p0.y;
+    let x2 = p2.x - p0.x;
+    let y2 = p2.y - p0.y;
 
     // calc cross
-    det = x1 * y2 - y1 * x2;
-    if det == 0i64 {
-        center = p0;
-        radius_sqr = 0i64;
+    let mut det = x1 * y2 - y1 * x2;
+    if det == 0f64 {
+        center.x = p0.x;
+        center.y = p0.y;
+        center.z = p0.z;
+        *radius_sqr = 0f64;
         return;
     }
-    
-    det = 0.5i64 /det;
-    len1 = x1*x1 + y1*y1;
-    len2 = x2*x2 + y2*y2;
-    cx = (len1 * y2 - len2 * y1) * det
-    cy = (len2 * x1 - len1 * x2) * det
+
+    det = 0.5f64 /det;
+    let len1 = x1*x1 + y1*y1;
+    let len2 = x2*x2 + y2*y2;
+    let cx = (len1 * y2 - len2 * y1) * det;
+    let cy = (len2 * x1 - len1 * x2) * det;
     center.x = p0.x + cx;
 	center.y = p0.y + cy;
-	center.z = 0i64;
-	radius_sqr = cx * cx + cy * cy;
+	center.z = 0f64;
+	*radius_sqr = cx * cx + cy * cy;
 }
 
 struct Delaunay2D {
@@ -54,9 +62,9 @@ struct Delaunay2D {
 }
 
 fn circum_circle(vetx: &Point, tri: &Triangle) -> bool {
-    center = &tri.center;
-    radius_sqr = &tri.radius_sqr;
-    if ((vetx.x - center.x).powi(2) + (vetx.y - center.y).powi(2)) <= radius_sqr {
+    let center = &tri.center;
+    let radius_sqr = &tri.radius_sqr;
+    if ((vetx.x - center.x).powi(2) + (vetx.y - center.y).powi(2)) <= *radius_sqr {
         true
     } else {
         false
@@ -64,10 +72,10 @@ fn circum_circle(vetx: &Point, tri: &Triangle) -> bool {
 }
 
 impl Delaunay2D {
-    fn triangulate(i_vertices: mut Vec<Point>) {
+    pub fn triangulate(&mut self, i_vertices: Vec<Point>) {
         // sort vertices
-        self.vertice = i_vertices;
-        self.vertice.sort_by(|a, b| a.cmp(b));
+        self.vertices = i_vertices;
+        self.vertices.sort_by(|a, b| a.cmp(b));
 
         // build super triangle, put it in unknown tris
 
