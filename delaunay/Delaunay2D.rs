@@ -59,6 +59,7 @@ fn get_circumsphere(p0: &Point, p1: &Point, p2: &Point, center: &mut Point, radi
 struct Delaunay2D {
     vertices: Vec<Point>,
     triangles: Vec<Triangle>,
+    input_vertex_num: usize,
 }
 
 fn circum_circle(vetx: &Point, tri: &Triangle) -> bool {
@@ -74,23 +75,61 @@ fn circum_circle(vetx: &Point, tri: &Triangle) -> bool {
 impl Delaunay2D {
     pub fn triangulate(&mut self, i_vertices: Vec<Point>) {
         // sort vertices
+        self.input_vertex_num = i_vertices.len();
         self.vertices = i_vertices;
         self.vertices.sort_by(|a, b| a.cmp(b));
 
         // build super triangle, put it in unknown tris
+        let mut xmin = self.vertices[0].x;
+        let mut ymin = self.vertices[0].y;
+        let mut xmax = xmin;
+        let mut ymax = ymin;
+        for i in 1..self.input_vertex_num {
+            xmin = std::cmp::min(xmin, self.vertices[i].x);
+            xmax = std::cmp::max(xmax, self.vertices[i].x);
+            ymin = std::cmp::min(ymin, self.vertices[i].y);
+            ymax = std::cmp::max(ymax, self.vertices[i].y);
+        }
+        let dx = xmax - xmin;
+        let dy = ymax - ymin;
+        let dmax = std::cmp::max(dx, dy);
+        let xmid = (xmax + xmin) / 2.0;
+        let ymid = (ymax + ymin) / 2.0;
+        self.vertices.resize(self.input_vertex_num + 3, {0, 0, 0});
+        self.vertices[self.input_vertex_num].x = xmid - 20 * dmax;
+        self.vertices[self.input_vertex_num].y = ymid - dmax;
+        self.vertices[self.input_vertex_num + 1].x = xmid;
+        self.vertices[self.input_vertex_num + 1].y = ymid + 20 * dmax;
+        self.vertices[self.input_vertex_num + 2].x = xmid + 20 * dmax;
+        self.vertices[self.input_vertex_num + 2].y = ymid - dmax;
 
-        // unknown tris, corr tris, edge buf
+        self.add_triangle(self.input_vertex_num, self.input_vertex_num+1, self.input_vertex_num+2)
 
         // traverse vertices
+        for ivtx in 0..self.input_vertex_num {
             // traverse unknown tris
+            for itri in 0..
                 // if vertice is right outside tri, put tri in corr tris
                 // if vertice is outside tri, continue
                 // if vertice is inside tri
                     // tri's edge not in edge buf, put it in buf, else clear all same edge
             // let vertice and edges construct new triangles, then put them in unknown tris
 
+        }
+            
         // merge unknown tris and corr tris
         // delete tris with super tri's edge
+    }
+
+    fn add_triangle(&mut self, p0: i32, p1: i32, p2: i32) {
+        let tri: Triangle = {
+            p0: p0,
+            p1: p1,
+            p2: p2,
+        };
+
+        get_circumsphere(self.vertices[p0], self.vertices[p1], self.vertices[p2], tri.center, tri.radius_sqr);
+        self.triangles.push(tri);
     }
 }
 
