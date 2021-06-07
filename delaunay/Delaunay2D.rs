@@ -59,6 +59,8 @@ fn get_circumsphere(p0: &Point, p1: &Point, p2: &Point, center: &mut Point, radi
 struct Delaunay2D {
     vertices: Vec<Point>,
     triangles: Vec<Triangle>,
+    tri_completed: Vec<bool>,
+    tri_count: usize,
     input_vertex_num: usize,
 }
 
@@ -107,18 +109,72 @@ impl Delaunay2D {
 
         // traverse vertices
         for ivtx in 0..self.input_vertex_num {
-            // traverse unknown tris
-            for itri in 0..
-                // if vertice is right outside tri, put tri in corr tris
-                // if vertice is outside tri, continue
-                // if vertice is inside tri
-                    // tri's edge not in edge buf, put it in buf, else clear all same edge
-            // let vertice and edges construct new triangles, then put them in unknown tris
+            // edges to build new unknown triangles
+            let mut edges: Vec<Edge> = Vec<Edge>::new();
 
+            // traverse unknown tris
+            let mut itri = 0;
+            while itri < self.tri_count {
+                if (circum_circle(self.vertices[ivtx], self.triangles[itri])) {
+                    // handle vertex inside tri circle
+                    edges.push(Edge{p0: self.triangles[itri].p0, p1: self.triangles[itri].p1});
+                    edges.push(Edge{p0: self.triangles[itri].p1, p1: self.triangles[itri].p2});
+                    edges.push(Edge{p0: self.triangles[itri].p2, p1: self.triangles[itri].p0});
+
+                    self.triangles[itri] = self.triangles[self.tri_count-1];
+                    self.tri_completed[itri] = self.tri_completed[self.tri_count-1];
+                    self.tri_count -= 1;
+                } else {
+                    if (self.triangles[itri].center.x + self.triangles[itri].radius_sqr.sqrt() < self.vertices[ivtx].x) {
+                        // if vertice is right outside tri, put tri in corr tris
+                        self.tri_completed[itri] = true;
+                    } else {
+                        // if vertice is outside tri, continue
+                    }
+                    itri += 1;
+                }
+            }
+            // check and clear all same edge
+            for i in 0..edges.len()-1 {
+                for j in i+1..edges.len() {
+                    if edges[i].p0 == edges[j].p1 && edges[i].p1 == edges[j].p0 {
+                        edges[i].p0 = -1;
+                        edges[i].p1 = -1;
+                        edges[j].p0 = -1;
+                        edges[j].p1 = -1;
+                    }
+                    if edges[i].p0 == edges[j].p0 && edges[i].p1 == edges[j].p1 {
+                        edges[i].p0 = -1;
+                        edges[i].p1 = -1;
+                        edges[j].p0 = -1;
+                        edges[j].p1 = -1;
+                    }
+                }
+            }
+
+            // let vertice and edges construct new triangles, then put them in unknown tris
+            for i in 0..edges.len() {
+                if edges[i].p0 < 0 || edges[i].p1 < 0 {
+                    continue;
+                }
+                self.add_triangle(ivtx, edges[i].p0, edges[i].p1);
+            }
         }
             
         // merge unknown tris and corr tris
         // delete tris with super tri's edge
+        let mut i = 0;
+        while i < self.tri_count {
+            if self.triangles[i].p0 >= self.input_vertex_num as i32
+               || self.triangles[i].p1 >= self.input_vertex_num as i32
+               || self.triangles[i].p2 >= self.input_vertex_num as i32 {
+                self.triangles[i] = self.triangles[tri_count-1];
+                self.tri_completed[i] = self.tri_completed[tri_count-1];
+                self.tri_count -= 1;
+                i -= 1;
+            }
+            i += 1;
+        }
     }
 
     fn add_triangle(&mut self, p0: i32, p1: i32, p2: i32) {
@@ -129,7 +185,14 @@ impl Delaunay2D {
         };
 
         get_circumsphere(self.vertices[p0], self.vertices[p1], self.vertices[p2], tri.center, tri.radius_sqr);
-        self.triangles.push(tri);
+        if self.tri_count < self.triangles.len() {
+            self.triangles[self.tri_count] = tri;
+            self.tri_completed[self.tri_count] = false;
+        } else {
+            self.triangles.push(tri);
+            self.tri_completed.push(false);
+        }
+        tri_count += 1;
     }
 }
 
