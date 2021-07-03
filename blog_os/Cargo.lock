@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "operating_system"
+name = "blog_os"
 version = "0.1.0"
