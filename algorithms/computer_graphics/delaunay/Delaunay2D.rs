@@ -1,3 +1,5 @@
+// This delaunay is not correct
+
 struct Point {
     x: f64,
     y: f64,
